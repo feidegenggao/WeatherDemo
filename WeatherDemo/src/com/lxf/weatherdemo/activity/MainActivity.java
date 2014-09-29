@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.app.Activity;
-import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Shader.TileMode;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
@@ -15,8 +15,10 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.lxf.weatherdemo.R;
-import com.lxf.weatherdemo.db.DBHelper;
 import com.lxf.weatherdemo.db.DBOpt;
+import com.lxf.weatherdemo.model.City;
+import com.lxf.weatherdemo.model.County;
+import com.lxf.weatherdemo.model.Province;
 import com.lxf.weatherdemo.util.HttpCallbackListener;
 import com.lxf.weatherdemo.util.HttpUtil;
 import com.lxf.weatherdemo.util.LogUtil;
@@ -29,10 +31,6 @@ public class MainActivity extends Activity {
 	ListView areaLV;
 	TextView titleTV;
 
-	/* list view */
-	private List<String> areaList;
-	private ArrayAdapter<String> areaAdapter;
-
 	/* data level */
 	private static final int PROVINCE_LEVEL = 0;
 	private static final int CITY_LEVEL = 1;
@@ -40,10 +38,18 @@ public class MainActivity extends Activity {
 	private int CURRENT_LEVEL = PROVINCE_LEVEL;
 
 	/* database */
-	private static final String DBName = "area.db";
-	private static final int DBVersion = 1;
-	private DBHelper dBHelper;
-	private SQLiteDatabase sQliteDatabase;
+	private DBOpt dBOpt;
+
+	/* data set */
+	private List<String> areaList;
+	private ArrayAdapter<String> areaAdapter;
+
+	private List<Province> currentProvinceList;
+	private Province currentProvince;
+	private List<City> currentCityList;
+	private City currentCity;
+	private List<County> currentCountyList;
+	private County currentCounty;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -52,8 +58,7 @@ public class MainActivity extends Activity {
 
 		setContentView(R.layout.main_layout);
 
-		dBHelper = new DBHelper(this, DBName, null, DBVersion);
-		sQliteDatabase = dBHelper.getWritableDatabase();
+		dBOpt = DBOpt.getInstance(this);
 
 		areaLV = (ListView) findViewById(R.id.areaLV);
 		titleTV = (TextView) findViewById(R.id.titleTV);
@@ -67,7 +72,26 @@ public class MainActivity extends Activity {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view,
 					int position, long id) {
-				// TODO
+				switch (CURRENT_LEVEL) {
+				case PROVINCE_LEVEL:
+					CURRENT_LEVEL = CITY_LEVEL;
+					currentProvince = currentProvinceList.get(position);
+					queryData();
+					break;
+
+				case CITY_LEVEL:
+					CURRENT_LEVEL = COUNTY_LEVEL;
+					currentCity = currentCityList.get(position);
+					queryData();
+					break;
+
+				case COUNTY_LEVEL:
+					currentCounty = currentCountyList.get(position);
+					break;
+
+				default:
+					break;
+				}
 			}
 		});
 
@@ -77,15 +101,21 @@ public class MainActivity extends Activity {
 	private void queryData() {
 		switch (CURRENT_LEVEL) {
 		case PROVINCE_LEVEL:
-			List<String> temp = DBOpt.queryProvince(sQliteDatabase);
-			if (temp.size() > 0) {
-				areaList.clear();
-				for (String s : temp) {
-					areaList.add(s);
-				}
-				
-				titleTV.setText("China");
-				// areaAdapter.notifyDataSetChanged();
+			currentProvinceList = dBOpt.queryProvince();
+			if (currentProvinceList.size() > 0) {
+				runOnUiThread(new Runnable() {
+
+					@Override
+					public void run() {
+						areaList.clear();
+						for (Province p : currentProvinceList) {
+							areaList.add(p.getName());
+						}
+
+						titleTV.setText("China");
+						areaAdapter.notifyDataSetChanged();
+					}
+				});
 
 			} else {
 				LogUtil.d(TAG, "queryProvince null result");
@@ -94,19 +124,87 @@ public class MainActivity extends Activity {
 
 					@Override
 					public void onFinish(String string) {
-						DBOpt.saveProvince(sQliteDatabase, string);
-						runOnUiThread(new Runnable() {
+						dBOpt.saveProvince(string);
 
-							@Override
-							public void run() {
-								queryData();
-							}
-						});
+						queryData();
 					}
 
 					@Override
 					public void onError(Exception e) {
 						LogUtil.e(TAG, "senRequestError:" + e.getMessage());
+					}
+				});
+			}
+			break;
+
+		case CITY_LEVEL:
+			currentCityList = dBOpt.queryCity(currentProvince.getId());
+			if (currentCityList.size() > 0) {
+				runOnUiThread(new Runnable() {
+
+					@Override
+					public void run() {
+						areaList.clear();
+						for (City c : currentCityList) {
+							areaList.add(c.getName());
+						}
+
+						titleTV.setText(currentProvince.getName());
+						areaAdapter.notifyDataSetChanged();
+					}
+				});
+
+			} else {
+				final String address = "http://www.weather.com.cn/data/list3/city"
+						+ currentProvince.getCode() + ".xml";
+				HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
+
+					@Override
+					public void onFinish(String string) {
+						dBOpt.saveCity(string, currentProvince.getId());
+
+						queryData();
+					}
+
+					@Override
+					public void onError(Exception e) {
+						LogUtil.e(TAG,
+								"send Reuqest City error:" + e.getMessage());
+					}
+				});
+			}
+			break;
+
+		case COUNTY_LEVEL:
+			currentCountyList = dBOpt.queryCounty(currentCity.getId());
+			if (currentCityList.size() > 0) {
+				runOnUiThread(new Runnable() {
+
+					@Override
+					public void run() {
+						areaList.clear();
+						for (County c : currentCountyList) {
+							areaList.add(c.getName());
+						}
+
+						titleTV.setText(currentCity.getName());
+						areaAdapter.notifyDataSetChanged();
+					}
+				});
+			} else {
+				final String address = "http://www.weather.com.cn/data/list3/city"
+						+ currentCity.getCode() + ".xml";
+				HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
+
+					@Override
+					public void onFinish(String string) {
+						dBOpt.saveCounty(string, currentCity.getId());
+					}
+
+					@Override
+					public void onError(Exception e) {
+						LogUtil.e(TAG,
+								"send Reuqest County error:" + e.getMessage());
 					}
 				});
 			}

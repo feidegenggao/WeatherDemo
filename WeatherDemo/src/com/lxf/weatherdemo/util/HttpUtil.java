@@ -10,6 +10,7 @@ public class HttpUtil {
 	protected static final int CONNECT_TIMEOUT = 8 * 1000;
 	protected static final int READ_TIMEOUT = 8 * 1000;
 	protected static final String REQUEST_METHOD_GET = "GET";
+	protected static final String TAG = "HttpUtil";
 
 	public static void sendHttpRequest(final String address,
 			final HttpCallbackListener listener) {
@@ -41,6 +42,7 @@ public class HttpUtil {
 					}
 
 				} catch (Exception e) {
+					LogUtil.d(TAG, "Send Request to " + address + "ERROR.");
 					e.printStackTrace();
 					if (null != listener) {
 						listener.onError(e);
