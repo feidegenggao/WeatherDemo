@@ -1,7 +1,7 @@
 package com.lxf.weatherdemo.util;
 
 public interface HttpCallbackListener {
-	public void onFinish();
+	public void onFinish(String string);
 	
-	public void onError();
+	public void onError(Exception e);
 }

@@ -26,9 +26,9 @@ public class DBInfo {
 
 	public static final String COUNTY_TABLE_NAME = "county";
 	public static final String COUNTY_COLUMN_ID = "id";
-	public static final String COUNTY_COLUMN_CODE = "id";
-	public static final String COUNTY_COLUMN_NAME = "id";
-	public static final String COUNTY_COLUMN_CITY = "id";
+	public static final String COUNTY_COLUMN_CODE = "code";
+	public static final String COUNTY_COLUMN_NAME = "name";
+	public static final String COUNTY_COLUMN_CITY = "city";
 	public static final String COUNTY_CREATE_TABLE = "create table "
 			+ COUNTY_TABLE_NAME + "(" + COUNTY_COLUMN_ID
 			+ " integer primary key autoincrement, " + COUNTY_COLUMN_CODE
