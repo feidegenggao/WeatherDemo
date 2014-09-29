@@ -59,8 +59,6 @@ public class MainActivity extends Activity {
 		titleTV = (TextView) findViewById(R.id.titleTV);
 
 		areaList = new ArrayList<String>();
-		areaList.add("a");
-		areaList.add("b");
 		areaAdapter = new ArrayAdapter<String>(this,
 				android.R.layout.simple_list_item_1, areaList);
 		areaLV.setAdapter(areaAdapter);
@@ -79,17 +77,15 @@ public class MainActivity extends Activity {
 	private void queryData() {
 		switch (CURRENT_LEVEL) {
 		case PROVINCE_LEVEL:
-			areaList = DBOpt.queryProvince(sQliteDatabase);
-			if (areaList.size() > 0) {
+			List<String> temp = DBOpt.queryProvince(sQliteDatabase);
+			if (temp.size() > 0) {
 				areaList.clear();
-				areaList.add("aa");
-				areaList.add("bb");
+				for (String s : temp) {
+					areaList.add(s);
+				}
 				
-				LogUtil.d(TAG, "areaList'size:" + areaList.size());
-				LogUtil.d(TAG, areaList.toString());
-
 				titleTV.setText("China");
-				areaAdapter.notifyDataSetChanged();
+				// areaAdapter.notifyDataSetChanged();
 
 			} else {
 				LogUtil.d(TAG, "queryProvince null result");
