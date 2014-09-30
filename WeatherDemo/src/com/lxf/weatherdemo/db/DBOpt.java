@@ -120,6 +120,8 @@ public class DBOpt {
 		Cursor cursor = sQliteDatabase.query(DBInfo.COUNTY_TABLE_NAME, null,
 				DBInfo.COUNTY_COLUMN_CITY + " = ?",
 				new String[] { String.valueOf(id) }, null, null, null);
+		LogUtil.d(TAG, "queryCounty, id:" + id);
+		LogUtil.d(TAG, "Result of county:" + cursor.getCount());
 		if (cursor.moveToFirst()) {
 			do {
 				County county = new County();

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.app.Activity;
-import android.graphics.Shader.TileMode;
+import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
@@ -13,6 +13,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.lxf.weatherdemo.R;
 import com.lxf.weatherdemo.db.DBOpt;
@@ -86,6 +87,8 @@ public class MainActivity extends Activity {
 					break;
 
 				case COUNTY_LEVEL:
+					Toast.makeText(MainActivity.this, "Will show weather.",
+							Toast.LENGTH_SHORT).show();
 					// currentCounty = currentCountyList.get(position);
 					break;
 
@@ -114,12 +117,14 @@ public class MainActivity extends Activity {
 
 						titleTV.setText("China");
 						areaAdapter.notifyDataSetChanged();
+						closeProgressDialog();
 					}
 				});
 
 			} else {
 				LogUtil.d(TAG, "queryProvince null result");
 				final String address = "http://www.weather.com.cn/data/list3/city.xml";
+				showProgressDialog();
 				HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
 
 					@Override
@@ -151,12 +156,14 @@ public class MainActivity extends Activity {
 
 						titleTV.setText(currentProvince.getName());
 						areaAdapter.notifyDataSetChanged();
+						closeProgressDialog();
 					}
 				});
 
 			} else {
 				final String address = "http://www.weather.com.cn/data/list3/city"
 						+ currentProvince.getCode() + ".xml";
+				showProgressDialog();
 				HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
 
 					@Override
@@ -189,6 +196,7 @@ public class MainActivity extends Activity {
 
 						titleTV.setText(currentCity.getName());
 						areaAdapter.notifyDataSetChanged();
+						closeProgressDialog();
 					}
 				});
 			} else {
@@ -197,6 +205,7 @@ public class MainActivity extends Activity {
 				LogUtil.d(TAG,
 						"queryCounty result is null. we will query from server");
 				LogUtil.d(TAG, "The url is :" + address);
+				showProgressDialog();
 				HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
 
 					@Override
@@ -221,6 +230,26 @@ public class MainActivity extends Activity {
 		}
 	}
 
+	private ProgressDialog queryProgressDialog = null;
+
+	private void closeProgressDialog() {
+		if (queryProgressDialog != null) {
+			queryProgressDialog.dismiss();
+		}
+		LogUtil.d(TAG, "close queryProgressDialog");
+	}
+
+	private void showProgressDialog() {
+		if (queryProgressDialog == null) {
+			queryProgressDialog = new ProgressDialog(this);
+			queryProgressDialog.setMessage("正在努力加载，n(*≧▽≦*)n");
+			queryProgressDialog.setCancelable(false);
+		}
+
+		queryProgressDialog.show();
+		LogUtil.d(TAG, "show queryProgressDialog");
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -230,12 +259,17 @@ public class MainActivity extends Activity {
 	public void onBackPressed() {
 		switch (CURRENT_LEVEL) {
 		case PROVINCE_LEVEL:
+			finish();
 			break;
 
 		case CITY_LEVEL:
+			CURRENT_LEVEL = PROVINCE_LEVEL;
+			queryData();
 			break;
 
 		case COUNTY_LEVEL:
+			CURRENT_LEVEL = CITY_LEVEL;
+			queryData();
 			break;
 
 		default:
