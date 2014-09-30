@@ -86,7 +86,7 @@ public class MainActivity extends Activity {
 					break;
 
 				case COUNTY_LEVEL:
-					currentCounty = currentCountyList.get(position);
+					// currentCounty = currentCountyList.get(position);
 					break;
 
 				default:
@@ -177,7 +177,7 @@ public class MainActivity extends Activity {
 
 		case COUNTY_LEVEL:
 			currentCountyList = dBOpt.queryCounty(currentCity.getId());
-			if (currentCityList.size() > 0) {
+			if (currentCountyList.size() > 0) {
 				runOnUiThread(new Runnable() {
 
 					@Override
@@ -194,11 +194,17 @@ public class MainActivity extends Activity {
 			} else {
 				final String address = "http://www.weather.com.cn/data/list3/city"
 						+ currentCity.getCode() + ".xml";
+				LogUtil.d(TAG,
+						"queryCounty result is null. we will query from server");
+				LogUtil.d(TAG, "The url is :" + address);
 				HttpUtil.sendHttpRequest(address, new HttpCallbackListener() {
 
 					@Override
 					public void onFinish(String string) {
+						LogUtil.d(TAG,
+								"queryCounty onFinish, save data to database");
 						dBOpt.saveCounty(string, currentCity.getId());
+						queryData();
 					}
 
 					@Override
@@ -208,6 +214,28 @@ public class MainActivity extends Activity {
 					}
 				});
 			}
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onBackPressed()
+	 */
+	@Override
+	public void onBackPressed() {
+		switch (CURRENT_LEVEL) {
+		case PROVINCE_LEVEL:
+			break;
+
+		case CITY_LEVEL:
+			break;
+
+		case COUNTY_LEVEL:
 			break;
 
 		default:
